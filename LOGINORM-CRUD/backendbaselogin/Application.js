@@ -1,143 +1,160 @@
 const express = require("express");
+const { Sequelize, DataTypes } = require("sequelize");
+const url = require("url");
+const cors = require("cors");
+
 const app = express();
 const puerto = 8080;
-const { Sequelize, DataTypes } = require("sequelize");
 
-app.use(express.static('public'));
+app.use(cors());
 app.use(express.json());
+app.use(express.static("public"));
 
-app.use((req, res, next) => {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    next();
+// Conexión administrativa
+const adminSequelize = new Sequelize("", "root", "1234", {
+    host: "localhost",
+    port: 3306,
+    dialect: "mysql",
+    logging: false
 });
 
-
-const adminSequelize = new Sequelize('', 'root', '1234', {
-    host: 'localhost', port: 3306, dialect: 'mysql', logging: false
+// Conexión usuarios
+const sequelizeUsuarios = new Sequelize("usuarios", "root", "1234", {
+    host: "localhost",
+    port: 3306,
+    dialect: "mysql",
+    logging: false
 });
 
-const sequelizeUsuarios = new Sequelize('usuarios', 'root', '1234', {
-    host: 'localhost', port: 3306, dialect: 'mysql', logging: false
+// Conexión PrediccionDemanda
+const sequelizePrediccion = new Sequelize("PrediccionDemanda", "root", "1234", {
+    host: "localhost",
+    port: 3306,
+    dialect: "mysql",
+    logging: false
 });
 
-const sequelizeCrud = new Sequelize('crudjson', 'root', '1234', {
-    host: 'localhost', port: 3306, dialect: 'mysql', logging: false
-});
-
-
-const LoginUser = sequelizeUsuarios.define('LoginUser', {
+// Modelo login
+const LoginUser = sequelizeUsuarios.define("LoginUser", {
     idLOGIN: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-    username: { type: DataTypes.STRING(45), allowNull: false, unique: true },
-    password: { type: DataTypes.STRING(45), allowNull: false },
-    tipousuario: { type: DataTypes.STRING(45), allowNull: false }
-}, { tableName: 'login', timestamps: false });
+    USERNAME: { type: DataTypes.STRING(45), allowNull: false, unique: true },
+    PASSWORD: { type: DataTypes.STRING(45), allowNull: false },
+    TIPOUSUARIO: { type: DataTypes.STRING(45), allowNull: false }
+}, { tableName: "login", timestamps: false });
 
-const TablaJson = sequelizeCrud.define('TablaJson', {
-    idEjercicio: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-    columnajson: { type: DataTypes.JSON, allowNull: false }
-}, { tableName: 'tablajson', timestamps: false });
+// Modelo productos
+const Producto = sequelizePrediccion.define("Producto", {
+    idProducto: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+    nombre: { type: DataTypes.STRING(100), allowNull: false },
+    descripcion: { type: DataTypes.TEXT },
+    precio: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
+    cantidad: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+    categoria: { type: DataTypes.STRING(50) },
+    fecha_creacion: { type: DataTypes.DATE, defaultValue: Sequelize.NOW }
+}, { tableName: "productos", timestamps: false });
 
-
+// Endpoint login
 app.get("/Login", async (req, res) => {
+    const q = url.parse(req.url, true).query;
     try {
-        const { user, password } = req.query;
         const result = await LoginUser.findOne({
-            where: { username: user, password: password }
+            where: { USERNAME: q.user, PASSWORD: q.password }
         });
-
         if (result) {
-            res.json({ status: "yes", tipo: result.tipousuario });
+            console.log("Login exitoso para usuario:", q.user);
+            res.json({ status: "yes", tipo: result.TIPOUSUARIO });
         } else {
+            console.log("Login fallido para usuario:", q.user);
             res.json({ status: "no", tipo: "nodefinido" });
         }
     } catch (err) {
-        res.status(500).json({ status: "no", tipo: "error", message: err.message });
+        console.error("Error en login:", err);
+        res.json({ status: "no", tipo: "error" });
     }
 });
 
-app.get("/Preguntas", async (req, res) => {
+// CRUD productos
+app.get("/api/productos", async (req, res) => {
+    const productos = await Producto.findAll();
+    console.log("Consulta de productos realizada. Total:", productos.length);
+    res.json(productos);
+});
+
+app.get("/api/productos/:id", async (req, res) => {
+    const p = await Producto.findByPk(req.params.id);
+    if (p) {
+        console.log("Consulta de producto con id:", req.params.id);
+        res.json(p);
+    } else {
+        console.log("Producto no encontrado con id:", req.params.id);
+        res.status(404).json({ error: "Producto no encontrado" });
+    }
+});
+
+app.post("/api/productos", async (req, res) => {
     try {
-        const result = await TablaJson.findAll();
-        const respuestas = result.map(r => r.columnajson);
-        res.json(respuestas);
+        const nuevo = await Producto.create(req.body);
+        console.log("Nuevo producto creado:", nuevo.nombre);
+        res.json(nuevo);
     } catch (err) {
-        res.json([]);
+        console.error("Error al crear producto:", err);
+        res.status(500).json({ error: "No se pudo crear el producto" });
     }
 });
 
-app.get("/Pregunta", async (req, res) => {
+app.put("/api/productos/:id", async (req, res) => {
     try {
-        const { id } = req.query;
-        const result = await TablaJson.findByPk(id);
+        await Producto.update(req.body, { where: { idProducto: req.params.id } });
+        console.log("Producto actualizado con id:", req.params.id);
+        res.json({ ok: true });
+    } catch (err) {
+        console.error("Error al actualizar producto:", err);
+        res.status(500).json({ error: "No se pudo actualizar el producto" });
+    }
+});
 
-        if (result) {
-            res.json([result.columnajson]);
+app.delete("/api/productos/:id", async (req, res) => {
+    try {
+        const eliminado = await Producto.destroy({ where: { idProducto: req.params.id } });
+        if (eliminado) {
+            console.log("Producto eliminado con id:", req.params.id);
+            res.json({ ok: true });
         } else {
-            res.json([]);
+            console.log("No se encontró producto para eliminar con id:", req.params.id);
+            res.status(404).json({ error: "Producto no encontrado" });
         }
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error("Error al eliminar producto:", err);
+        res.status(500).json({ error: "No se pudo eliminar el producto" });
     }
 });
 
-app.post("/Pregunta", async (req, res) => {
-    try {
-        const nuevoRegistro = await TablaJson.create({ columnajson: req.body });
-        res.json({ ok: true, id: nuevoRegistro.idEjercicio });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.put("/Pregunta", async (req, res) => {
-    try {
-        const { id } = req.query;
-        const body = req.body;
-        body.id = String(id);
-
-        await TablaJson.update({ columnajson: body }, {
-            where: { idEjercicio: id }
-        });
-        res.json({ ok: true });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.delete("/Pregunta", async (req, res) => {
-    try {
-        const { id } = req.query;
-        await TablaJson.destroy({
-            where: { idEjercicio: id }
-        });
-        res.json({ ok: true });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-
-app.get('*', (req, res) => {
-    res.sendFile('index.html', { root: 'public' });
-});
-
+// Inicialización
 async function inicializar() {
     try {
-        await adminSequelize.query('DROP DATABASE IF EXISTS usuarios;');
-        await adminSequelize.query('CREATE DATABASE usuarios;');
-        await adminSequelize.query('CREATE DATABASE IF NOT EXISTS crudjson;');
-        await adminSequelize.close();
+        await adminSequelize.query("DROP DATABASE IF EXISTS usuarios;");
+        await adminSequelize.query("CREATE DATABASE usuarios;");
+        await adminSequelize.query("DROP DATABASE IF EXISTS PrediccionDemanda;");
+        await adminSequelize.query("CREATE DATABASE PrediccionDemanda;");
 
         await sequelizeUsuarios.sync({ force: true });
-        await sequelizeCrud.sync();
+        await sequelizePrediccion.sync({ force: true });
 
-        await LoginUser.create({ username: 'admin', password: '1234', tipousuario: 'administrador' });
+        console.log("Conexión exitosa a BD 'usuarios' y 'PrediccionDemanda'");
 
-        app.listen(puerto, () => console.log("Servidor en puerto: " + puerto));
+        await LoginUser.create({ USERNAME: "admin", PASSWORD: "1234", TIPOUSUARIO: "administrador" });
+        console.log("Usuario administrador creado");
+
+        await Producto.bulkCreate([
+            { nombre: "Laptop X", descripcion: "Laptop 15'' 8GB RAM", precio: 15000, cantidad: 20, categoria: "Electrónica" },
+            { nombre: "Smartphone Y", descripcion: "Teléfono Android 128GB", precio: 8000, cantidad: 50, categoria: "Electrónica" },
+            { nombre: "Televisor Z", descripcion: "Pantalla LED 50'' Full HD", precio: 12000, cantidad: 15, categoria: "Electrodomésticos" }
+        ]);
+        console.log("Productos iniciales insertados");
+
+        app.listen(puerto, () => console.log("Servidor escuchando en puerto:", puerto));
     } catch (err) {
-        console.error("Error de inicialización en BD:", err);
+        console.error("Error en inicialización:", err);
     }
 }
 

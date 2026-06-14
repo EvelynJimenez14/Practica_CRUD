@@ -1,27 +1,57 @@
 DROP DATABASE IF EXISTS usuarios;
 CREATE DATABASE usuarios;
-USE usuarios;
+use usuarios;
 CREATE TABLE login (
-    idLOGIN     INT         NOT NULL AUTO_INCREMENT,
-    USERNAME    VARCHAR(45) NOT NULL UNIQUE,
-    PASSWORD    VARCHAR(45) NOT NULL,
-    TIPOUSUARIO VARCHAR(45) NOT NULL,
-    PRIMARY KEY (idLOGIN)
+ idLOGIN INT NOT NULL AUTO_INCREMENT,
+ USERNAME VARCHAR(45) NOT NULL UNIQUE,
+ PASSWORD VARCHAR(45) NOT NULL ,
+ TIPOUSUARIO VARCHAR(45) NOT NULL,
+ PRIMARY KEY (idLOGIN) );
+INSERT INTO login (USERNAME, PASSWORD, TIPOUSUARIO) VALUES ('admin', '1234','administrador');
+
+-- Base de datos principal del proyecto
+DROP DATABASE IF EXISTS PrediccionDemanda;
+CREATE DATABASE PrediccionDemanda;
+USE PrediccionDemanda;
+
+-- Tabla de productos
+CREATE TABLE productos (
+    idProducto INT NOT NULL AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    precio DECIMAL(10,2) NOT NULL,
+    cantidad INT NOT NULL DEFAULT 0,
+    categoria VARCHAR(50),
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (idProducto)
 );
-INSERT INTO login (USERNAME, PASSWORD, TIPOUSUARIO) VALUES ('admin', '1234', 'administrador');
 
-DROP DATABASE IF EXISTS crudjson;
-CREATE DATABASE crudjson;
-USE crudjson;
-
-CREATE TABLE tablajson (
-    idEjercicio INT  NOT NULL AUTO_INCREMENT,
-    columnajson JSON,
-    PRIMARY KEY (idEjercicio)
+-- Tabla de ventas
+CREATE TABLE ventas (
+    idVenta INT NOT NULL AUTO_INCREMENT,
+    idProducto INT NOT NULL,
+    cantidad INT NOT NULL,
+    fecha DATE NOT NULL,
+    cliente VARCHAR(100),
+    PRIMARY KEY (idVenta),
+    FOREIGN KEY (idProducto) REFERENCES productos(idProducto)
 );
 
-INSERT INTO tablajson (columnajson) VALUES ('{"id":"1","pregunta":"¿Qué métrica mide el error promedio de un modelo de predicción?","respuesta":"B","opciones":[{"clave":"A","texto":"Accuracy"},{"clave":"B","texto":"RMSE"},{"clave":"C","texto":"F1-Score"},{"clave":"D","texto":"AUC-ROC"}]}');
-INSERT INTO tablajson (columnajson) VALUES ('{"id":"2","pregunta":"¿Qué hace la etapa de limpieza de datos en un pipeline?","respuesta":"A","opciones":[{"clave":"A","texto":"Elimina nulos, duplicados y valores atípicos"},{"clave":"B","texto":"Entrena el modelo predictivo"},{"clave":"C","texto":"Genera gráficas de resultados"},{"clave":"D","texto":"Divide el dataset en train y test"}]}');
-INSERT INTO tablajson (columnajson) VALUES ('{"id":"3","pregunta":"¿Qué algoritmo es más adecuado para predecir la demanda de productos en e-commerce?","respuesta":"C","opciones":[{"clave":"A","texto":"K-Means"},{"clave":"B","texto":"Naive Bayes"},{"clave":"C","texto":"Random Forest Regressor"},{"clave":"D","texto":"PCA"}]}');
-INSERT INTO tablajson (columnajson) VALUES ('{"id":"4","pregunta":"¿Qué significa un valor de R² igual a 0.85 en un modelo?","respuesta":"B","opciones":[{"clave":"A","texto":"El modelo tiene 85% de errores"},{"clave":"B","texto":"El modelo explica el 85% de la varianza de los datos"},{"clave":"C","texto":"El modelo predice con 15% de exactitud"},{"clave":"D","texto":"El dataset tiene 85% de valores nulos"}]}');
-INSERT INTO tablajson (columnajson) VALUES ('{"id":"5","pregunta":"¿Qué etapa del pipeline de datos convierte columnas de texto a valores numéricos?","respuesta":"D","opciones":[{"clave":"A","texto":"Limpieza"},{"clave":"B","texto":"Recolección"},{"clave":"C","texto":"Evaluación"},{"clave":"D","texto":"Transformación"}]}');
+-- Tabla de predicciones
+CREATE TABLE predicciones (
+    idPrediccion INT NOT NULL AUTO_INCREMENT,
+    idProducto INT NOT NULL,
+    fecha DATE NOT NULL,
+    demanda_predicha INT,
+    modelo VARCHAR(50),
+    PRIMARY KEY (idPrediccion),
+    FOREIGN KEY (idProducto) REFERENCES productos(idProducto)
+);
+
+-- Datos iniciales de prueba
+INSERT INTO productos (nombre, descripcion, precio, cantidad, categoria)
+VALUES 
+('Laptop X', 'Laptop de 15 pulgadas con 8GB RAM', 15000.00, 20, 'Electrónica'),
+('Smartphone Y', 'Teléfono Android gama media con 128GB', 8000.00, 50, 'Electrónica'),
+('Televisor Z', 'Pantalla LED 50 pulgadas Full HD', 12000.00, 15, 'Electrodomésticos');
+

@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axios from "axios";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "react-bootstrap";
 
-function Editar() {
-    const { id } = useParams();
+function NuevoProducto() {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         nombre: "",
@@ -14,15 +13,6 @@ function Editar() {
         categoria: ""
     });
 
-    useEffect(() => {
-        axios.get(`http://localhost:8080/api/productos/${id}`)
-            .then(res => setFormData(res.data))
-            .catch(err => {
-                console.error("Error al cargar producto:", err);
-                alert("Error al cargar producto");
-            });
-    }, [id]);
-
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
@@ -30,12 +20,12 @@ function Editar() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.put(`http://localhost:8080/api/productos/${id}`, formData);
-            alert("Producto actualizado correctamente");
+            await axios.post("http://localhost:8080/api/productos", formData);
+            alert("Producto creado correctamente");
             navigate("/administrator");
         } catch (err) {
-            console.error("Error al actualizar producto:", err);
-            alert("Error al actualizar producto");
+            console.error("Error al agregar producto:", err);
+            alert("Error al guardar producto");
         }
     };
 
@@ -49,7 +39,7 @@ function Editar() {
                 </Button>
             </nav>
 
-            <h2>Editar Producto</h2>
+            <h2>Nuevo Producto</h2>
             <form onSubmit={handleSubmit}>
                 <input type="text" name="nombre" placeholder="Nombre" value={formData.nombre}
                     onChange={handleChange} className="form-control mb-2" required />
@@ -61,10 +51,10 @@ function Editar() {
                     onChange={handleChange} className="form-control mb-2" required />
                 <input type="text" name="categoria" placeholder="Categoría" value={formData.categoria}
                     onChange={handleChange} className="form-control mb-2" />
-                <button type="submit" className="btn btn-warning">Actualizar</button>
+                <button type="submit" className="btn btn-success">Guardar</button>
             </form>
         </div>
     );
 }
 
-export default Editar;
+export default NuevoProducto;

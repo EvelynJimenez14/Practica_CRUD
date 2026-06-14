@@ -1,0 +1,77 @@
+body {
+    font-family: 'Roboto', 'Open Sans', sans-serif;
+    color: #374151;
+    /* gris oscuro para texto */
+    background-color: #F9FAFB;
+    /* fondo claro */
+    margin: 0;
+    padding: 0;
+}
+
+h1,
+h2,
+h3 {
+    color: #1E3A8A;
+    /* azul corporativo */
+    font-weight: bold;
+}
+
+/* Botones CRUD */
+.btn-success {
+    background-color: #10B981;
+    border: none;
+}
+
+/* Guardar */
+.btn-info {
+    background-color: #2563EB;
+    border: none;
+}
+
+/* Ver */
+.btn-warning {
+    background-color: #F59E0B;
+    border: none;
+    color: #fff;
+}
+
+/* Editar */
+.btn-danger {
+    background-color: #DC2626;
+    border: none;
+}
+
+/* Eliminar */
+.btn-secondary {
+    background-color: #6B7280;
+    border: none;
+    color: #fff;
+}
+
+/* Regresar */
+
+.small-link {
+    font-size: 14px;
+}
+
+/* Tablas */
+table {
+    background-color: #fff;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+table th {
+    background-color: #1E3A8A;
+    color: #fff;
+}
+
+table td {
+    padding: 8px;
+}
+
+/* Formularios */
+.form-control {
+    border-radius: 4px;
+    border: 1px solid #D1D5DB;
+}

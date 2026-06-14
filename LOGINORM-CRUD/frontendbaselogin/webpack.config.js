@@ -49,7 +49,7 @@ module.exports = {
         // Proxy inverso: enruta las peticiones de React hacia la API de Express
         proxy: [
             {
-                context: ['/Login', '/Pregunta', '/Preguntas'],
+                context: ['/Login', '/Productos', '/Productos'],
                 target: 'http://localhost:8080',
                 secure: false,
                 changeOrigin: true
